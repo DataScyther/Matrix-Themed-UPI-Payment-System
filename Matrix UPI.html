@@ -1,0 +1,1502 @@
+<html></html>
+<head>
+  <base href="http://example.com/">
+  <title>UPI QR Code Generator</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Audiowide&display=swap');
+
+    :root {
+      --primary: #00ff00; /* Matrix Green */
+      --secondary: #008000; /* Darker Green */
+      --dark: #001400; /* Very Dark Green */
+      --neon: #39ff14; /* Neon Green */
+      --accent: #32cd32; /* Lime Green */
+      --background-gradient: linear-gradient(135deg, #001400, #003200); /* Dark Green Gradient */
+      --transition-duration: 0.5s;
+      --highlight: #50C878; /* Emerald Green */
+      --shadow: rgba(0, 255, 0, 0.4); /* Green Shadow */
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Orbitron', sans-serif;
+      background: var(--background-gradient);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+      perspective: 2000px; /* Enhanced perspective for better 3D effects */
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 25% 25%, rgba(0, 255, 140, 0.2) 0%, transparent 60%),
+        radial-gradient(circle at 75% 75%, rgba(20, 255, 133, 0.2) 0%, transparent 60%),
+        radial-gradient(circle at 50% 50%, rgba(0, 207, 115, 0.1) 0%, transparent 70%);
+      pointer-events: none;
+      opacity: 0.15;
+      z-index: -2;
+    }
+
+    /* Add Matrix rain canvas */
+    #matrix-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -3;
+    }
+
+    .container {
+      min-height: 600px; 
+      display: flex;
+      flex-direction: column;
+      gap: 30px; /* Add consistent spacing */
+      justify-content: flex-start; /* Start from top */
+      padding: 30px; /* Decreased from 40px */
+      background: 
+        linear-gradient(rgba(0,20,0,0.95), rgba(0,20,0,0.95));
+      border: 3px solid transparent;
+      background-clip: padding-box;
+      border-radius: 30px;
+      text-align: center;
+      max-width: 600px; /* Decreased from 800px */
+      width: 85%; /* Slightly reduced from 90% */
+      position: relative;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 0 60px rgba(0, 255, 0, 0.3);
+      transform: rotateX(10deg) rotateY(5deg); /* Increased 3D rotation */
+      transition: transform var(--transition-duration) ease;
+    }
+
+    .container:hover {
+      transform: rotateX(5deg) rotateY(0deg) translateZ(20px); /* Enhance container hover effect */
+    }
+
+    .input-group {
+      flex: 0 0 auto;
+      width: 100%;
+      margin-bottom: 10px; /* Reduced to leave more space for QR code */
+      display: flex;
+      flex-direction: column;
+      gap: 15px; /* Add gap between elements */
+    }
+
+    .input-field {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .input-field label {
+      margin-bottom: 5px;
+      color: var(--highlight);
+      font-size: 0.9em;
+    }
+
+    input {
+      padding: 15px 20px; /* Decreased from 20px 25px */
+      background: rgba(0, 255, 0, 0.1);
+      border: 2px solid var(--primary);
+      border-radius: 15px;
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.9em; /* Slightly smaller font */
+      transition: all 0.4s ease;
+      transform: translateZ(0);
+    }
+
+    input::placeholder {
+      color: rgba(255,255,255,0.7);
+    }
+
+    input:focus {
+      outline: none;
+      transform: scale(1.05);
+      box-shadow: 0 0 25px var(--primary);
+      background: rgba(0, 255, 0, 0.2);
+    }
+
+    button {
+      grid-column: 1 / -1;
+      padding: 15px 40px; /* Decreased from 20px 50px */
+      border: 3px solid var(--primary);
+      border-radius: 15px;
+      background: rgba(0, 255, 0, 0.15);
+      color: var(--primary);
+      font-family: 'Audiowide', 'Orbitron', sans-serif;
+      font-size: 1.1em; /* Decreased from 1.3em */
+      cursor: pointer;
+      transition: all 0.4s ease;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: var(--primary);
+      color: var(--dark);
+      box-shadow: 0 0 40px rgba(0, 255, 0, 0.6);
+      transform: translateY(-5px) scale(1.05);
+    }
+
+    #qrcode {
+      margin: auto auto 30px auto; /* Push to bottom center */
+      margin-bottom: 20px;
+      min-height: 200px;
+      width: 200px;
+      transform-style: preserve-3d;
+      transform: translateY(20px) translateZ(30px); /* Added Z translation for 3D depth */
+      position: relative;
+      background: white;
+      padding: 10px;
+      border-radius: 15px;
+      box-shadow: 
+        0 0 20px rgba(0, 255, 0, 0.2),
+        0 10px 20px rgba(0, 0, 0, 0.3);
+      width: 200px; /* Decreased from 256px */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: all 0.4s ease;
+      opacity: 0;
+      transform: translateY(0) translateZ(30px) rotateX(-5deg);
+      transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      padding: 20px;
+      border-radius: 15px;
+    }
+
+    #qrcode.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    #qrcode::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border: 2px solid var(--primary);
+      border-radius: 15px;
+      animation: qrLoading 2s linear infinite;
+      opacity: 0.5;
+    }
+
+    @keyframes qrLoading {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .corner {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--primary);
+      opacity: 0.8;
+      background: 
+        linear-gradient(rgba(0,20,0,0.7), rgba(0,20,0,0.7));
+      border-radius: 5px;
+    }
+
+    .corner-tl { top: -10px; left: -10px; border-right: none; border-bottom: none; }
+    .corner-tr { top: -10px; right: -10px; border-left: none; border-bottom: none; }
+    .corner-bl { bottom: -10px; left: -10px; border-right: none; border-top: none; }
+    .corner-br { bottom: -10px; right: -10px; border-left: none; border-top: none; }
+
+    .scanline {
+      position: absolute;
+      width: 100%;
+      height: 6px;
+      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+      filter: blur(2px);
+      animation: scanline 3s linear infinite;
+      opacity: 0.6;
+      top: 0;
+    }
+
+    @keyframes scanline {
+      0% { transform: translateY(-100%); }
+      100% { transform: translateY(100%); }
+    }
+
+    .pulse-circle {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      border: 2px solid var(--secondary);
+      border-radius: 50%;
+      top: -100px;
+      left: -100px;
+      animation: pulse 10s infinite;
+      opacity: 0.2;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+        opacity: 0.2;
+      }
+      50% {
+        transform: scale(1.5);
+        opacity: 0;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 0.2;
+      }
+    }
+
+    .floating-squares {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: var(--accent);
+      opacity: 0.5;
+      animation: float 6s infinite ease-in-out;
+      border-radius: 4px;
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 0.5;
+      }
+      50% {
+        transform: translateY(-50px) rotate(180deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(0) rotate(360deg);
+        opacity: 0.5;
+      }
+    }
+
+    .floating-squares:nth-child(1) { top: 10%; left: 20%; animation-delay: 0s; }
+    .floating-squares:nth-child(2) { top: 30%; left: 70%; animation-delay: 1s; }
+    .floating-squares:nth-child(3) { top: 60%; left: 40%; animation-delay: 2s; }
+    .floating-squares:nth-child(4) { top: 80%; left: 80%; animation-delay: 3s; }
+    .floating-squares:nth-child(5) { top: 50%; left: 10%; animation-delay: 4s; }
+    .floating-squares:nth-child(6) { top: 20%; left: 50%; animation-delay: 5s; }
+    .floating-squares:nth-child(7) { top: 70%; left: 30%; animation-delay: 6s; }
+    .floating-squares:nth-child(8) { top: 40%; left: 90%; animation-delay: 7s; }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 15px;
+        min-height: 500px;
+      }
+      
+      input {
+        padding: 12px 15px;
+      }
+      
+      #qrcode {
+        width: 180px;
+        min-height: 180px;
+      }
+    }
+
+    #qrcode img {
+      filter: none;
+    }
+
+    /* Cool Typing Effect */
+    .typing-effect {
+      color: var(--primary);
+      font-family: 'Orbitron', monospace;
+      font-size: 0.8em;
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      overflow: hidden;
+      white-space: nowrap;
+      animation: typing 2s steps(14), blink 0.5s step-end infinite alternate;
+      border-right: 2px solid var(--primary);
+    }
+
+    @keyframes typing {
+      from { width: 0 }
+      to { width: 8.5em }
+    }
+
+    @keyframes blink {
+      50% { border-color: transparent }
+    }
+
+    /* Power Button */
+    .power-button {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      width: 15px;
+      height: 15px;
+      border: 2px solid var(--primary);
+      border-radius: 50%;
+      cursor: pointer;
+      animation: pulse 2s infinite;
+    }
+
+    .power-button::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 6px;
+      height: 6px;
+      background: var(--primary);
+      border-radius: 50%;
+    }
+
+    /* Cyber Dots */
+    .cyber-dots {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+    }
+
+    .cyber-dots::before {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-image: radial-gradient(var(--primary) 1px, transparent 1px);
+      background-size: 20px 20px;
+      opacity: 0.1;
+    }
+
+    /* Add hover effects for inputs */
+    input:hover {
+      transform: translateX(5px);
+      box-shadow: -5px 0 15px var(--primary);
+    }
+
+    /* Add success animation for QR generation */
+    @keyframes success-pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    /* New and enhanced styles */
+    .content-wrapper {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 30px;
+      width: 100%;
+      padding: 20px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      margin-top: 5px;
+    }
+
+    .icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--primary);
+      font-style: normal;
+    }
+
+    input {
+      padding-left: 35px;
+      background: rgba(0, 255, 0, 0.05);
+      border: 1px solid var(--primary);
+      transition: all 0.3s ease;
+    }
+
+    .focus-border {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: var(--primary);
+      transition: width 0.3s ease;
+    }
+
+    input:focus ~ .focus-border {
+      width: 100%;
+    }
+
+    .required {
+      color: var(--primary);
+      margin-left: 4px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .main-btn, .reset-btn {
+      position: relative;
+      overflow: hidden;
+      padding: 12px 30px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .main-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--primary);
+      opacity: 0.2;
+      transition: all 0.3s ease;
+    }
+
+    .main-btn:hover::before {
+      opacity: 0.4;
+    }
+
+    .btn-glitch {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--primary);
+      filter: blur(20px);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .main-btn:hover .btn-glitch {
+      opacity: 0.3;
+    }
+
+    .qr-wrapper {
+      position: relative;
+      padding: 20px;
+      background: rgba(0, 255, 0, 0.05);
+      border-radius: 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .qr-frame {
+      position: relative;
+      padding: 20px;
+      border: 2px solid var(--primary);
+      border-radius: 10px;
+    }
+
+    .scan-animation {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: var(--primary);
+      animation: scan 2s linear infinite;
+    }
+
+    @keyframes scan {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(100%); }
+    }
+
+    .status-bar {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      display: flex;
+      gap: 20px;
+    }
+
+    .status-item {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .status-label {
+      font-size: 0.7em;
+      color: var(--primary);
+      opacity: 0.7;
+    }
+
+    .status-value {
+      font-size: 0.8em;
+      color: var(--primary);
+    }
+
+    .blink {
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    .hex-border {
+      position: absolute;
+      inset: 0;
+      background: 
+        linear-gradient(60deg, transparent 0%, var(--primary) 1%, transparent 2%) 0 0,
+        linear-gradient(-60deg, transparent 0%, var(--primary) 1%, transparent 2%) 0 0;
+      background-size: 20px 20px;
+      opacity: 0.1;
+      pointer-events: none;
+    }
+
+    /* Add glitch effect */
+    .glitch-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 255, 0, 0.1);
+      pointer-events: none;
+      animation: glitch 5s infinite;
+      opacity: 0;
+    }
+
+    @keyframes glitch {
+      0% { transform: translate(0); }
+      1% { transform: translate(-2px, 2px); opacity: 0.5; }
+      2% { transform: translate(2px, -2px); opacity: 0.5; }
+      3% { transform: translate(0); opacity: 0; }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .content-wrapper {
+        grid-template-columns: 1fr;
+      }
+      
+      .qr-column {
+        order: -1;
+      }
+    }
+
+    .qr-scanner-line {
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      background: var(--primary);
+      animation: scanning 2s linear infinite;
+    }
+
+    @keyframes scanning {
+      0% { top: 0; }
+      100% { top: 100%; }
+    }
+
+    .holographic-effect {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(
+        45deg,
+        transparent 0%,
+        rgba(0, 255, 0, 0.05) 50%,
+        transparent 100%
+      );
+      animation: holographic 3s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes holographic {
+      0% { transform: translateX(-100%) translateY(-100%); }
+      100% { transform: translateX(100%) translateY(100%); }
+    }
+
+    .status-display {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-family: 'Orbitron', sans-serif;
+      color: var(--primary);
+      text-transform: uppercase;
+      font-size: 0.8em;
+    }
+
+    .status-item {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      margin-bottom: 10px;
+    }
+
+    .status-value {
+      font-weight: bold;
+      text-shadow: 0 0 10px var(--primary);
+    }
+
+    .input-field input.valid-upi {
+      border-color: var(--neon) !important;
+      box-shadow: 0 0 10px var(--neon);
+    }
+
+    .input-field input.invalid-upi {
+      border-color: #ff0000 !important;
+      box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+    }
+
+    .upi-feedback {
+      font-size: 0.8em;
+      margin-top: 5px;
+      color: var(--neon);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .upi-feedback.show {
+      opacity: 1;
+    }
+
+    .upi-feedback.error {
+      color: #ff0000;
+    }
+
+    [data-theme="dark"] {
+      --primary: #39ff14;
+      --background-gradient: linear-gradient(135deg, #000000, #001400);
+      /* Add other dark theme colors */
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link rel="manifest" href="/manifest.json">
+</head>
+<body>
+  <canvas id="matrix-bg"></canvas>
+  <div class="pulse-circle"></div>
+
+  <div class="container">
+    <div class="scanline"></div>
+    <div class="corner corner-tl"></div>
+    <div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div>
+    <div class="corner corner-br"></div>
+    
+    <h1>UPI QR Code Generator</h1>
+    <div class="input-group">
+      <div class="input-field">
+        <label for="upiId">UPI ID</label>
+        <input type="text" id="upiId" placeholder="Enter UPI ID or Phone Number" oninput="validateUPIIdRealTime(this.value)">
+        <div id="upiIdFeedback" class="upi-feedback"></div>
+      </div>
+      <div class="input-field">
+        <label for="recipientName">Recipient Name</label>
+        <input type="text" id="recipientName" placeholder="Recipient Name" />
+      </div>
+      <div class="input-field">
+        <label for="amount">Amount (₹)</label>
+        <input type="number" id="amount" placeholder="Amount (₹)" step="100" min="0" />
+      </div>
+      <div class="input-field">
+        <label for="message">Payment Message (Optional)</label>
+        <input type="text" id="message" placeholder="Payment Message (Optional)" />
+      </div>
+      <button onclick="generateQRCode()" style="margin-top: auto; align-self: center; min-width: 200px;">Generate QR Code</button>
+    </div>
+    <div id="qrcode"></div>
+  </div>
+
+  <script>
+    function validateUPIId(upiId) {
+      // UPI ID format: username@bankname or mobilenumber@bankname 
+      const upiRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z]{3,}$/;
+      const phoneRegex = /^\d{10}@[a-zA-Z]{3,}$/;  // For phone numbers
+      const commonUPIHandles = ['okaxis', 'okhdfcbank', 'okicici', 'oksbi', 'hdfc', 'sbi', 'ybl', 'paytm', 'apl', 'gpay', 'axl', 'ibl', 'ptyes' , 'phonepe' , 'ptaxis'];
+      
+      // Check if it's a phone number format
+      if (phoneRegex.test(upiId)) {
+        const handle = upiId.split('@')[1].toLowerCase();
+        return commonUPIHandles.some(validHandle => handle.includes(validHandle));
+      }
+      
+      // Check regular UPI ID format
+      if (!upiRegex.test(upiId)) {
+        return false;
+      }
+      
+      // Check if the bank handle is valid
+      const handle = upiId.split('@')[1].toLowerCase();
+      return commonUPIHandles.some(validHandle => handle.includes(validHandle));
+    }
+
+    // Add new function for phone number detection
+    function detectAndFormatUPI() {
+      const upiInput = document.getElementById('upiId');
+      let value = upiInput.value.trim();
+      
+      // Check if input is a 10-digit phone number
+      const phoneRegex = /^\d{10}$/;
+      if (phoneRegex.test(value)) {
+        // Auto-append @upi handle
+        value = value + '@okicici';
+        upiInput.value = value;
+      }
+    }
+
+    let lastSpokenTime = 1; // Variable to track the last spoken time
+
+    function speak(text) {
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel();
+
+      window.speechSynthesis.speak(speech);
+    }
+
+    // Add a function to initialize voices properly
+    function initVoices() {
+      return new Promise((resolve) => {
+        let voices = window.speechSynthesis.getVoices();
+        if (voices.length > 1) {
+          resolve(voices);
+        } else {
+          window.speechSynthesis.onvoiceschanged = () => {
+            voices = window.speechSynthesis.getVoices();
+            resolve(voices);
+          };
+        }
+      });
+    }
+
+    // Modified hover function for smoother experience
+    function initializeInputHoverSpeech() {
+      const inputMappings = {
+        'upiId': 'Please enter your UPI ID or phone number',
+        'recipientName': 'Please enter the recipient name',
+        'amount': 'Please enter the amount',
+        'message': 'You may enter an optional payment message'
+      };
+
+      // Add hover listeners to all input fields
+      Object.keys(inputMappings).forEach(inputId => {
+        const input = document.getElementById(inputId);
+        let hoverTimeout;
+        let hasSpoken = false; // Flag to track if speech has been triggered
+
+        input.addEventListener('mouseenter', () => {
+          // Only speak if the input field is empty
+          if (!input.value.trim()) {
+            // Add small delay to prevent accidental triggers
+            hoverTimeout = setTimeout(() => {
+              if (!hasSpoken) { // Check if speech has already been spoken
+                speak(inputMappings[inputId]);
+                hasSpoken = true; // Set flag to true after speaking
+              }
+            }, 300);
+          }
+        });
+
+        input.addEventListener('mouseleave', () => {
+          clearTimeout(hoverTimeout);
+          // Cancel any ongoing speech when mouse leaves
+          window.speechSynthesis.cancel();
+        });
+
+        // Reset the speaking flag when the input loses focus
+        input.addEventListener('blur', () => {
+          hasSpoken = false; // Reset speaking flag when input loses focus
+        });
+
+        // Special handling for amount field
+        if (inputId === 'amount') {
+          input.addEventListener('input', (e) => {
+            const value = e.target.value.trim();
+            // Regex to check if the value contains only numbers and decimal point
+            const validNumberRegex = /^\d*\.?\d*$/;
+            
+            if (value) {
+              if (/[a-zA-Z]/.test(value)) {
+                speak("You entered letters. Please enter only numbers for the amount");
+                input.style.borderColor = 'red';
+              } else if (/[^0-9.]/.test(value)) {
+                speak("You entered special characters. Please enter only numbers for the amount");
+                input.style.borderColor = 'red';
+              } else if (!validNumberRegex.test(value) || value < 0 || isNaN(value)) {
+                speak("You entered the wrong amount. Please enter a valid amount");
+                input.style.borderColor = 'red';
+              } else {
+                input.style.borderColor = ''; // Reset to default
+                return;
+              }
+              // Add shake animation for any error
+              input.style.animation = 'shake 0.5s';
+              setTimeout(() => {
+                input.style.animation = '';
+              }, 500);
+            }
+          });
+
+          // Add keypress event to prevent invalid characters
+          input.addEventListener('keypress', (e) => {
+            // Allow only numbers, decimal point, and control keys
+            if (/[a-zA-Z]/.test(e.key)) {
+              e.preventDefault();
+              speak("Please enter only numbers, not letters");
+            } else if (!/[\d.]/.test(e.key) && !e.ctrlKey && !e.metaKey) {
+              e.preventDefault();
+              speak("Please enter only numbers, not special characters");
+            }
+          });
+        }
+      });
+    }
+
+    // Initialize everything when the document loads
+    document.addEventListener('DOMContentLoaded', async () => {
+      await initVoices();
+      initializeInputHoverSpeech();
+    });
+
+    function generateQRCode() {
+      const upiId = document.getElementById('upiId').value.trim();
+      const recipientName = document.getElementById('recipientName').value.trim();
+      const amount = document.getElementById('amount').value.trim();
+      const message = document.getElementById('message').value.trim();
+      
+      const qrcodeContainer = document.getElementById('qrcode');
+      qrcodeContainer.innerHTML = "";
+      qrcodeContainer.classList.remove('show');
+      
+      if(!upiId || !recipientName) {
+        alert("Please enter UPI ID and Recipient Name");
+        return;
+      }
+      
+      if (!validateUPIId(upiId)) {
+        alert("Invalid UPI ID format! Please enter a valid UPI ID (e.g., username@bankname or mobilenumber@bankname)");
+        return;
+      }
+      
+      if(amount && (isNaN(amount) || amount < 0)) {
+        alert("Please enter a valid amount");
+        return;
+      }
+
+      // Simplified UPI URI format that works with all UPI apps
+      const upiURL = `upi://pay?pa=${upiId}&pn=${recipientName}${amount ? `&am=${amount}` : ''}&cu=INR${message ? `&tn=${message}` : ''}`;
+      
+      try {
+        new QRCode(qrcodeContainer, {
+          text: upiURL,
+          width: 200,
+          height: 200,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H
+        });
+        
+        qrcodeContainer.classList.add('show');
+        speak("QR code generation is successful"); // Replace alert with speech
+      } catch(error) {
+        console.error("QR Code generation failed:", error);
+        speak("Failed to generate QR Code. Please try again."); // Also replace error alert with speech
+      }
+    }
+  </script>
+
+  <script>
+    const canvas = document.getElementById('matrix-bg');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const katakana = '';
+    const nums = '0101010101010101010101010101010101010101101010101010101010101010101010';
+    const latin = '';
+    const alphabet = katakana + nums + latin;
+
+    const fontSize = 16;
+    const columns = canvas.width/fontSize;
+
+    const rainDrops = Array(Math.floor(columns)).fill(1);
+
+    function draw() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = '#0F0';
+        ctx.font = fontSize + 'px monospace';
+
+        for(let i = 0; i < rainDrops.length; i++) {
+            const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+            ctx.fillText(text, i*fontSize, rainDrops[i]*fontSize);
+            
+            if(rainDrops[i]*fontSize > canvas.height && Math.random() > 0.975){
+                rainDrops[i] = 0;
+            }
+            rainDrops[i] += 1;
+        }
+    }
+
+    function matrixAnimation() {
+        draw();
+        requestAnimationFrame(matrixAnimation);
+    }
+
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+
+    matrixAnimation();
+  </script>
+
+  <script>
+    // Add Three.js setup after the matrix rain script
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('matrix-bg') });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const geometry = new THREE.BoxGeometry();
+    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true });
+    const cube = new THREE.Mesh(geometry, material);
+    scene.add(cube);
+
+    camera.position.z = 5;
+
+    function animate() {
+      requestAnimationFrame(animate);
+      cube.rotation.x += 0.01;
+      cube.rotation.y += 0.01;
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+    });
+  </script>
+
+  <script>
+    function initVoiceCommands() {
+      const recognition = new webkitSpeechRecognition();
+      recognition.continuous = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event) => {
+        const command = event.results[event.results.length - 1][0].transcript.toLowerCase();
+        
+        if (command.includes('generate') || command.includes('create')) {
+          generateQRCode();
+        } else if (command.includes('reset') || command.includes('clear')) {
+          // Clear all fields
+          document.querySelectorAll('input').forEach(input => input.value = '');
+        }
+      };
+
+      recognition.start();
+    }
+  </script>
+
+  <script>
+    async function authenticateUser() {
+      try {
+        const credential = await navigator.credentials.get({
+          publicKey: {
+            challenge: new Uint8Array(32),
+            rpId: window.location.hostname,
+            allowCredentials: [],
+            userVerification: "preferred"
+          }
+        });
+        return true;
+      } catch (e) {
+        console.error('Authentication failed:', e);
+        return false;
+      }
+    }
+  </script>
+
+  <script>
+    function simulatePaymentVerification() {
+      const steps = [
+        'Initializing Secure Channel...',
+        'Verifying UPI ID...',
+        'Encrypting Transaction Data...',
+        'Generating Secure QR Code...',
+        'Complete!'
+      ];
+let lastSpokenTime = 0; // Variable to track the last spoken time
+
+function speakText(text) {
+  const currentTime = Date.now();
+
+  // Only speak if 2 minutes have passed since the last spoken time
+  if (currentTime - lastSpokenTime < 120000) {
+    return;
+  }
+
+  lastSpokenTime = currentTime;
+
+  // Cancel any ongoing speech
+  window.speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.volume = 1;
+  utterance.rate = 1.1;speakText("Payment verified successfully");speakText("Payment verified successfully");
+  utterance.pitch = 1;
+
+  // Prefer a female voice if available
+  const voices = window.speechSynthesis.getVoices();
+  const preferredVoice = voices.find(voice => voice.lang.includes('en') && voice.name.includes('Female'));
+  if (preferredVoice) {
+    utterance.voice = preferredVoice;
+  }
+
+  window.speechSynthesis.speak(utterance);
+}
+
+// Initialize input hover speech with delay
+function initializeInputHoverSpeech() {
+  const inputMappings = {
+    'upiId': 'Please enter your UPI ID or phone number',
+    'recipientName': 'Please enter the recipient name',
+    'amount': 'Please enter the amount',
+    'message': 'You may enter an optional payment message'
+  };
+
+  // Add hover listeners to all input fields
+  Object.keys(inputMappings).forEach(inputId => {
+    const input = document.getElementById(inputId);
+    let hoverTimeout;
+
+    input.addEventListener('mouseenter', () => {
+      // Only speak if the input field is empty
+      if (!input.value.trim()) {
+        // Add small delay to prevent accidental triggers
+        hoverTimeout = setTimeout(() => {
+          speak(inputMappings[inputId]);
+        }, 1);
+      }
+    });
+
+    input.addEventListener('mouseleave', () => {
+      clearTimeout(hoverTimeout);
+      // Cancel any ongoing speech when mouse leaves
+      window.speechSynthesis.cancel();
+    });
+
+    input.addEventListener('focus', () => {
+      // Check if speech is already ongoing to prevent repetition
+      if (Date.now() - lastSpokenTime >= 1) {
+        speak(inputMappings[inputId]);
+      }
+    });
+  });
+}
+      let i = 0;
+      const statusElement = document.createElement('div');
+      statusElement.className = 'verification-status';
+      
+      const interval = setInterval(() => {
+        if (i >= steps.length) {
+          clearInterval(interval);
+          return;
+        }
+        statusElement.textContent = steps[i++];
+      }, 800);
+    }
+  </script>
+
+  <script>
+    async function showARPreview() {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      
+      // Create AR overlay
+      const arOverlay = document.createElement('div');
+      arOverlay.className = 'ar-overlay';
+      arOverlay.appendChild(video);
+      document.body.appendChild(arOverlay);
+    }
+  </script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeInputHoverSpeech();
+    });
+  </script>
+
+  <script>
+    // Add this function near your other JavaScript functions
+    let initialized = false;
+    
+    function initializeOnce() {
+      if (!initialized) {
+        initializeInputHoverSpeech();
+        initialized = true;
+      }
+    }
+
+    function initializeInputHoverSpeech() {
+      const inputMappings = {
+        'upiId': 'Please enter your UPI ID or phone number',
+        'recipientName': 'Please enter the recipient name',
+        'amount': 'Please enter the amount',
+        'message': 'You may enter an optional payment message'
+      };
+
+      // Add hover listeners to all input fields
+      Object.keys(inputMappings).forEach(inputId => {
+        const input = document.getElementById(inputId);
+        let hoverTimeout;
+
+        input.addEventListener('mouseenter', () => {
+          // Only speak if the input field is empty
+          if (!input.value.trim()) {
+            // Add small delay to prevent accidental triggers
+            hoverTimeout = setTimeout(() => {
+              speak(inputMappings[inputId]);
+            }, 300);
+          }
+        });
+
+        input.addEventListener('mouseleave', () => {
+          clearTimeout(hoverTimeout);
+          // Cancel any ongoing speech when mouse leaves
+          window.speechSynthesis.cancel();
+        });
+      });
+    }
+
+    // Modify your existing speak function to handle interruptions better
+    function speak(text) {
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel();
+
+      const speech = new SpeechSynthesisUtterance();
+      speech.text = text;
+      speech.volume = 1;
+      speech.rate = 1;
+      speech.pitch = 1.1;
+
+      // Choose a voice (preferably female voice if available)
+      const voices = window.speechSynthesis.getVoices();
+      const preferredVoice = voices.find(voice => 
+        voice.lang.includes('en') && voice.name.includes('Female')
+      ) || voices.find(voice => voice.lang.includes('en'));
+
+      if (preferredVoice) {
+        speech.voice = preferredVoice;
+      }
+
+      window.speechSynthesis.speak(speech);
+    }
+
+    // Add this to ensure voices are loaded
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+      speechSynthesis.onvoiceschanged = initializeOnce;
+    }
+
+    document.addEventListener('DOMContentLoaded', initializeOnce);
+  </script>
+
+  <script>
+    function saveTransaction() {
+      const transaction = {
+        upiId: document.getElementById('upiId').value,
+        recipient: document.getElementById('recipientName').value,
+        amount: document.getElementById('amount').value,
+        timestamp: new Date().toISOString()
+      };
+
+      let history = JSON.parse(localStorage.getItem('transactionHistory') || '[]');
+      history.push(transaction);
+      localStorage.setItem('transactionHistory', JSON.stringify(history));
+    }
+
+    function showTransactionHistory() {
+      const history = JSON.parse(localStorage.getItem('transactionHistory') || '[]');
+      // Add UI to display history
+    }
+  </script>
+
+  <script>
+    async function shareQRCode() {
+      const canvas = document.querySelector("#qrcode canvas");
+      const blob = await new Promise(resolve => canvas.toBlob(resolve));
+      const file = new File([blob], 'upi-qr.png', { type: 'image/png' });
+      
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'UPI QR Code',
+            files: [file]
+          });
+        } catch (err) {
+          console.error('Share failed:', err);
+        }
+      }
+    }
+  </script>
+
+  <script>
+    function saveFavorite() {
+      const favorite = {
+        upiId: document.getElementById('upiId').value,
+        name: document.getElementById('recipientName').value
+      };
+      
+      let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+      favorites.push(favorite);
+      localStorage.setItem('favorites', JSON.stringify(favorites));
+    }
+
+    function loadFavorite(favorite) {
+      document.getElementById('upiId').value = favorite.upiId;
+      document.getElementById('recipientName').value = favorite.name;
+    }
+  </script>
+
+  <script>
+    // Add service worker registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => console.log('ServiceWorker registered'))
+          .catch(err => console.log('ServiceWorker registration failed'));
+      });
+    }
+  </script>
+</body>
+</html>
+<style>
+  /* Adjust QR code canvas size */
+  #qrcode {
+    max-width: 200px;
+    max-height: 200px;
+    margin: 0 auto;
+  }
+
+  #qrcode canvas {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+</style>
+
+<script>
+  const VALID_UPI_HANDLES = {
+    'okaxis': 'Axis Bank',
+    'okhdfcbank': 'HDFC Bank',
+    'okicici': 'ICICI Bank',
+    'oksbi': 'State Bank of India',
+    'hdfc': 'HDFC Bank',
+    'sbi': 'State Bank of India',
+    'ybl': 'Yes Bank',
+    'paytm': 'Paytm Payments Bank',
+    'apl': 'Amazon Pay',
+    'gpay': 'Google Pay',
+    'axl': 'Axis Bank',
+    'ibl': 'ICICI Bank',
+    'ptyes': 'Yes Bank',
+    'phonepe': 'PhonePe',
+    'ptaxis': 'Axis Bank'
+  };
+
+  function validateUPIIdRealTime(upiId) {
+    const input = document.getElementById('upiId');
+    const feedback = document.getElementById('upiIdFeedback');
+    
+    // Clear previous styling
+    input.classList.remove('valid-upi', 'invalid-upi');
+    feedback.classList.remove('show', 'error');
+    
+    if (!upiId) {
+      feedback.textContent = 'Please enter a UPI ID';
+      feedback.classList.add('show', 'error');
+      return false;
+    }
+
+    const [username, handle] = upiId.split('@');
+    
+    if (!handle) {
+      feedback.textContent = 'UPI ID must contain @ symbol';
+      feedback.classList.add('show', 'error');
+      input.classList.add('invalid-upi');
+      return false;
+    }
+
+    // Check username format
+    if (!/^[a-zA-Z0-9._-]+$/.test(username)) {
+      feedback.textContent = 'Username can only contain letters, numbers, dots, underscores, and hyphens';
+      feedback.classList.add('show', 'error');
+      input.classList.add('invalid-upi');
+      return false;
+    }
+
+    // Check if it's a phone number format
+    if (/^\d{10}$/.test(username)) {
+      const bankHandle = handle.toLowerCase();
+      const validBank = Object.keys(VALID_UPI_HANDLES).find(h => bankHandle.includes(h));
+      
+      if (validBank) {
+        feedback.textContent = `Valid UPI ID for ${VALID_UPI_HANDLES[validBank]}`;
+        feedback.classList.add('show');
+        input.classList.add('valid-upi');
+        return true;
+      }
+    }
+
+    // Check regular UPI ID format
+    const bankHandle = handle.toLowerCase();
+    const validBank = Object.keys(VALID_UPI_HANDLES).find(h => bankHandle.includes(h));
+    
+    if (!validBank) {
+      feedback.textContent = 'Invalid bank handle. Please use a registered UPI bank handle';
+      feedback.classList.add('show', 'error');
+      input.classList.add('invalid-upi');
+      return false;
+    }
+
+    feedback.textContent = `Valid UPI ID for ${VALID_UPI_HANDLES[validBank]}`;
+    feedback.classList.add('show');
+    input.classList.add('valid-upi');
+    return true;
+  }
+
+  function validateUPIId(upiId) {
+    return validateUPIIdRealTime(upiId);
+  }
+
+  async function generateQRCode() {
+    const upiId = document.getElementById('upiId').value.trim();
+    const recipientName = document.getElementById('recipientName').value.trim();
+    const amount = document.getElementById('amount').value.trim();
+    const message = document.getElementById('message').value.trim();
+    
+    const qrcodeContainer = document.getElementById('qrcode');
+    qrcodeContainer.innerHTML = "";
+    qrcodeContainer.classList.remove('show');
+    
+    if(!upiId || !recipientName) {
+      speak("Please enter UPI ID and Recipient Name");
+      return;
+    }
+    
+    if (!validateUPIId(upiId)) {
+      // The error message will be shown by the validateUPIId function
+      speak("Invalid UPI ID. Please try again");
+      return;
+    }
+    
+    if(amount && (isNaN(amount) || amount < 0)) {
+      speak("Please enter a valid amount");
+      return;
+    }
+
+    const upiURL = `upi://pay?pa=${upiId}&pn=${recipientName}${amount ? `&am=${amount}` : ''}&cu=INR${message ? `&tn=${message}` : ''}`;
+    
+    try {
+      new QRCode(qrcodeContainer, {
+        text: upiURL,
+        width: 200,
+        height: 200,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+      
+      qrcodeContainer.classList.add('show');
+      speak("QR code generation is successful");
+    } catch(error) {
+      console.error("QR Code generation failed:", error);
+      speak("Failed to generate QR Code. Please try again.");
+    }
+  }
+</script>
+
+<script>
+  function toggleDarkMode() {
+    document.documentElement.setAttribute('data-theme', 
+      document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'
+    );
+  }
+</script>
+
+<script>
+  function enhancedValidation() {
+    const amount = document.getElementById('amount').value;
+    
+    // Add maximum amount limit
+    if (amount > 100000) {
+      speak("Amount exceeds maximum limit of ₹1,00,000");
+      return false;
+    }
+    
+    // Add minimum amount validation
+    if (amount < 1) {
+      speak("Amount should be at least ₹1");
+      return false;
+    }
+    
+    return true;
+  }
+</script>
+
+<script>
+  function generateCustomQR(options) {
+    const qrOptions = {
+      text: options.upiURL,
+      width: options.size || 200,
+      height: options.size || 200,
+      colorDark: options.foreground || "#000000",
+      colorLight: options.background || "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H
+    };
+
+    if (options.logo) {
+      qrOptions.logo = options.logo;
+      qrOptions.logoWidth = options.logoWidth;
+      qrOptions.logoHeight = options.logoHeight;
+    }
+
+    try {
+      new QRCode(document.getElementById("qrcode"), qrOptions);
+    } catch (error) {
+      console.error("QR Code generation failed:", error);
+      speak("Failed to generate QR Code. Please try again.");
+    }
+  }
+</script>

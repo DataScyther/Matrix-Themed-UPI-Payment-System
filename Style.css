@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Audiowide&display=swap');
+
+:root {
+  --primary: #00ff00; /* Matrix Green */
+  --secondary: #008000; /* Darker Green */
+  --dark: #001400; /* Very Dark Green */
+  --neon: #39ff14; /* Neon Green */
+  --accent: #32cd32; /* Lime Green */
+  --background-gradient: linear-gradient(135deg, #001400, #003200); /* Dark Green Gradient */
+  --transition-duration: 0.5s;
+  --highlight: #50C878; /* Emerald Green */
+  --shadow: rgba(0, 255, 0, 0.4); /* Green Shadow */
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Orbitron', sans-serif;
+  background: var(--background-gradient);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  perspective: 2000px; /* Enhanced perspective for better 3D effects */
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 25% 25%, rgba(0, 255, 140, 0.2) 0%, transparent 60%),
+    radial-gradient(circle at 75% 75%, rgba(20, 255, 133, 0.2) 0%, transparent 60%),
+    radial-gradient(circle at 50% 50%, rgba(0, 207, 115, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+  opacity: 0.15;
+}
+
+#qrcode {
+  margin: auto auto 30px auto; /* Push to bottom center */
+  margin-bottom: 20px;
+  min-height: 200px;
+  width: 200px;
+}
+
+.power-button {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  width: 15px;
+}
+
+@keyframes glitch {
+  0% { transform: translate(0); }
+  1% { transform: translate(-2px, 2px); opacity: 0.5; }
+  2% { transform: translate(2px, -2px); opacity: 0.5; }
+  3% { transform: translate(0); opacity: 0; }
+}
