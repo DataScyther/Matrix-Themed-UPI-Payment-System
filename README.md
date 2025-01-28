@@ -2,9 +2,9 @@
 
 Hello everyone, 😊
 
-I am pleased to announce my inaugural project, “Matrix UPI QR Code Generator”. This project entails the development of Web technology with integration of Matrix rain Animation & 3D Effects. 🌧️✨
+I am pleased to announce my inaugural project, “UPI QR Code Generator with amount”. This project entails the development of Web technology with integration of Matrix rain Animation & 3D Effects. 🌧️✨
 
-🚀 Introducing the Matrix UPI QR Code Generator: Where Fintech Meets Futuristic Design! 💸🔮
+🚀 Introducing the UPI QR Code Generator: Where Fintech Meets Futuristic Design! 💸🔮
 
 Just launched my latest project – a cutting-edge UPI QR Code Generator that's not just a tool, but an experience! 🌟
 
